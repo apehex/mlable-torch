@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mlable-torch"
-version = "0.2.0"
+version = "0.2.1"
 description = "PyTorch libs: layers, blocks, optimizers, etc."
 authors = ["apehex <apehex@protonmail.com>"]
 readme = ".github/README.md"
