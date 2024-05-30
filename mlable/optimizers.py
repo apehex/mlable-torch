@@ -2,7 +2,7 @@ import functools
 
 import torch
 
-import mlable.torch.data as _mtd
+import mlable.data
 
 # LEARNING RATE ###############################################################
 
@@ -56,7 +56,7 @@ def train(model:torch.nn.Module, loss: callable, optimizer: torch.optim.Optimize
             # track the overall iteration
             __k = __e * __steps + __s
             # random batch
-            __x, __y = _mtd.batch(x=x, y=y, size=n_batch)
+            __x, __y = mlable.data.batch(x=x, y=y, size=n_batch)
             # step
             __loss = step(model=model, loss=loss, optimizer=optimizer, x=__x, y=__y, epoch=__e)
             # log the progress
