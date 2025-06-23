@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "mlable-torch"
-version = "0.2.1"
+version = "0.2.2"
 description = "PyTorch libs: layers, blocks, optimizers, etc."
-authors = ["apehex <apehex@protonmail.com>"]
+license = ".github/LICENSE.md"
 readme = ".github/README.md"
+authors = ["apehex <apehex@protonmail.com>"]
 packages = [{include = "mlable"}]
 
 [tool.poetry.dependencies]
