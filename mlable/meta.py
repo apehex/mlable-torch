@@ -422,10 +422,16 @@ VAE_ARGS = {
 
 # PARSER #######################################################################
 
-def create_parser(definitions: dict=LORA_ARGS, description: str='') -> argparse.ArgumentParser:
+def parse_args(definitions: dict=LORA_ARGS, description: str='') -> argparse.Namespace:
     __parser = argparse.ArgumentParser(description=description)
     # iterate on the argument definitions (str, dict)
     for __k, __d in definitions.items():
         __parser.add_argument(__k, **__d)
-    # parser object
-    return __parser
+    # mostly filled with the defaults above
+    __args = __parser.parse_args()
+    # sanity checks
+    assert (__args.model_name is None) or (__args.model_config is None), 'cannot specify both `--model_name` and `--model_config`'
+    assert (__args.dataset_name is not None) or (__args.dataset_dir is not None), 'specify either `--dataset_name` or `--dataset_dir`'
+    assert (__args.image_resolution % 8 == 0), '`--image_resolution` must be divisible by 8'
+    # dataclass object
+    return __args
