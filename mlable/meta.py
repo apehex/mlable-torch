@@ -5,7 +5,7 @@ import random
 # RANDOM #######################################################################
 
 RANDOM_ARGS = {
-    '--seed': {
+    '--random_seed': {
         'type': int,
         'required': False,
         'default': random.randint(0, 2 ** 32),
@@ -17,7 +17,7 @@ OUTPUT_ARGS = {
     '--output_dir': {
         'type': str,
         'required': False,
-        'default': 'lora-model',
+        'default': 'outputs',
         'help': 'The output directory where the model predictions and checkpoints will be written.'},
     '--cache_dir': {
         'type': str,
@@ -30,29 +30,43 @@ OUTPUT_ARGS = {
         'default': 'logs',
         'help': '[TensorBoard](https://www.tensorflow.org/tensorboard) log directory.'},}
 
-# MODEL ########################################################################
+# VERSION ######################################################################
 
-MODEL_ARGS = {
+VERSION_ARGS = {
     '--model_name': {
         'type': str,
         'required': False,
         'default': 'stable-diffusion-v1-5/stable-diffusion-v1-5',
         'help': 'Path to pretrained model or model identifier from huggingface.co/models.',},
-    '--revision': {
+    '--model_config': {
+        'type': str,
+        'required': False,
+        'default': None,
+        'help': 'The config of the VAE model to train, leave as None to use standard VAE model configuration.',},
+    '--model_revision': {
         'type': str,
         'required': False,
         'default': None,
         'help': 'Revision of pretrained model identifier from huggingface.co/models.',},
-    '--variant': {
+    '--model_variant': {
         'type': str,
         'required': False,
         'default': None,
-        'help': 'Variant of the model files of the pretrained model identifier from huggingface.co/models, e.g. fp16',},
+        'help': 'Variant of the model files of the pretrained model identifier from huggingface.co/models, e.g. fp16',},}
+
+# ARCHITECTURE #################################################################
+
+MODEL_ARGS = {
     '--lora_rank': {
         'type': int,
         'required': False,
         'default': 8,
-        'help': 'The dimension of the LoRA update matrices.',},}
+        'help': 'The dimension of the LoRA update matrices.',},
+    '--use_ema': {
+        'required': False,
+        'default': False,
+        'action': 'store_true',
+        'help': 'Whether to use EMA model.'},}
 
 # DATASET ######################################################################
 
@@ -96,10 +110,10 @@ DATASET_ARGS = {
 # PREPROCESSING ################################################################
 
 PREPROCESSING_ARGS = {
-    '--resolution': {
+    '--image_resolution': {
         'type': int,
         'required': False,
-        'default': 512,
+        'default': 64,
         'help': 'The resolution for input images.'},
     '--center_crop': {
         'required': False,
@@ -111,7 +125,7 @@ PREPROCESSING_ARGS = {
         'default': False,
         'action': 'store_true',
         'help': 'whether to randomly flip images horizontally.'},
-    '--image_interpolation_mode': {
+    '--interpolation_mode': {
         'type': str,
         'required': False,
         'default': 'lanczos',
@@ -140,21 +154,27 @@ CHECKPOINT_ARGS = {
 # VALIDATION ###################################################################
 
 VALIDATION_ARGS = {
-    '--validation_prompt': {
+    '--validation_prompts': {
         'type': str,
+        'required': False,
         'default': '',
-        'required': False,
         'help': 'A prompt that is sampled during training for inference.'},
-    '--num_validation_images': {
-        'type': int,
-        'default': 4,
+    '--validation_images': {
+        'type': str,
         'required': False,
-        'help': 'Number of images that should be generated during validation with `validation_prompt`.'},
+        'default': '',
+        'nargs': '+',
+        'help': 'A set of paths to the images used for validation.'},
     '--validation_epochs': {
         'type': int,
-        'default': 1,
         'required': False,
-        'help': 'Run fine-tuning validation every X epochs.'},}
+        'default': 1,
+        'help': 'Run validation every X epochs.'},
+    '--validation_steps': {
+        'type': int,
+        'required': False,
+        'default': 128,
+        'help': 'Run validation every X steps.'},}
 
 # ITERATION ####################################################################
 
@@ -195,7 +215,7 @@ LEARNING_ARGS = {
     '--learning_rate': {
         'type': float,
         'required': False,
-        'default': 1e-4,
+        'default': 4.5e-6,
         'help': 'Initial learning rate (after the potential warmup period) to use.'},
     '--scale_lr': {
         'required': False,
@@ -207,20 +227,69 @@ LEARNING_ARGS = {
         'required': False,
         'default': 'cosine',
         'help': 'The scheduler type to use, among ["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"]'},
+    '--lr_power': {
+        'type': float,
+        'required': False,
+        'default': 1.0,
+        'help': 'Power factor of the polynomial scheduler.'},
     '--lr_warmup_steps': {
         'type': int,
         'required': False,
         'default': 512,
-        'help': 'Number of steps for the warmup in the lr scheduler.'},}
+        'help': 'Number of steps for the warmup in the lr scheduler.'},
+    '--lr_cycle_num': {
+        'type': int,
+        'required': False,
+        'default': 1,
+        'help': 'Number of hard resets of the lr in cosine_with_restarts scheduler.'},}
 
 # LOSS #########################################################################
 
 LOSS_ARGS = {
+    '--rec_loss': {
+        'type': str,
+        'required': False,
+        'default': 'l2',
+        'choices': ['l1', 'l2'],
+        'help': 'The loss function for VAE reconstruction.'},
+    '--kl_rate': {
+        'type': float,
+        'required': False,
+        'default': 1e-6,
+        'help': 'Scaling factor for the Kullback-Leibler divergence penalty term.'},
+    '--lpips_rate': {
+        'type': float,
+        'required': False,
+        'default': 0.5,
+        'help': 'Scaling factor for the LPIPS metric.'},
     '--snr_gamma': {
         'type': float,
         'required': False,
         'default': 0.0,
         'help': 'SNR weighting gamma to rebalance the loss; recommended value is 5.0. https://arxiv.org/pdf/2303.09556'},}
+
+DISC_ARGS = {
+    '--disc_loss': {
+        'type': str,
+        'required': False,
+        'default': 'hinge',
+        'choices': ['hinge', 'vanilla'],
+        'help': 'The loss function for the discriminator.'},
+    '--disc_start': {
+        'type': int,
+        'required': False,
+        'default': 32768,
+        'help': 'Starting step for the discriminator.'},
+    '--disc_factor': {
+        'type': float,
+        'required': False,
+        'default': 1.0,
+        'help': 'Scaling factor for the discriminator.'},
+    '--disc_scale': {
+        'type': float,
+        'required': False,
+        'default': 1.0,
+        'help': 'Scaling factor for the discriminator.'},}
 
 # PRECISION ####################################################################
 
@@ -313,6 +382,7 @@ DIFFUSION_ARGS = {
 LORA_ARGS = {
     **RANDOM_ARGS,
     **OUTPUT_ARGS,
+    **VERSION_ARGS,
     **MODEL_ARGS,
     **DATASET_ARGS,
     **PREPROCESSING_ARGS,
@@ -329,6 +399,26 @@ LORA_ARGS = {
     **DIFFUSION_ARGS,}
 
 # VAE ##########################################################################
+
+VAE_ARGS = {
+    **RANDOM_ARGS,
+    **OUTPUT_ARGS,
+    **VERSION_ARGS,
+    **MODEL_ARGS,
+    **DATASET_ARGS,
+    **PREPROCESSING_ARGS,
+    **CHECKPOINT_ARGS,
+    **VALIDATION_ARGS,
+    **ITERATION_ARGS,
+    **GRADIENT_ARGS,
+    **LEARNING_ARGS,
+    **LOSS_ARGS,
+    **DISC_ARGS,
+    **PRECISION_ARGS,
+    **DISTRIBUTION_ARGS,
+    **OPTIMIZER_ARGS,
+    **FRAMEWORK_ARGS,
+    **DIFFUSION_ARGS,}
 
 # PARSER #######################################################################
 
