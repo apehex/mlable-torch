@@ -1,5 +1,7 @@
 import re
 
+import mlable.utils
+
 # CONSTANTS ####################################################################
 
 ANSI_REGEX = r'\x1b\[[0-9;]*[mGKHF]'
@@ -13,7 +15,7 @@ def clean(text: str, pattern: str=ANSI_REGEX, rewrite: str='') -> str:
 
 def split(text: str, height: int=-1, width: int=-1, separator: str='\n') -> list:
     # typically split on \n or at a fixed size
-    __rows = text.split(separator) if separator else chunk(text, width)
+    __rows = text.split(separator) if separator else mlable.utils.chunk(text, width)
     # :width would leave one character out when width == -1
     __width = slice(width if (width > 0) else None)
     # idem fro the height
