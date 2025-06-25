@@ -14,21 +14,26 @@ RANDOM_ARGS = {
 # OUTPUT #######################################################################
 
 OUTPUT_ARGS = {
-    '--output_dir': {
-        'type': str,
-        'required': False,
-        'default': 'outputs',
-        'help': 'The output directory where the model predictions and checkpoints will be written.'},
     '--cache_dir': {
         'type': str,
         'required': False,
         'default': None,
         'help': 'The directory where the downloaded models and datasets will be stored.'},
+    '--output_dir': {
+        'type': str,
+        'required': False,
+        'default': 'outputs',
+        'help': 'The output directory where the model predictions and checkpoints will be written.'},
     '--logging_dir': {
         'type': str,
         'required': False,
         'default': 'logs',
-        'help': '[TensorBoard](https://www.tensorflow.org/tensorboard) log directory.'},}
+        'help': '[TensorBoard](https://www.tensorflow.org/tensorboard) log directory.'},
+    '--project_name': {
+        'type': str,
+        'required': False,
+        'default': 'text-to-text',
+        'help': 'The `project_name` passed to the trackers.'},}
 
 # VERSION ######################################################################
 
@@ -61,12 +66,24 @@ MODEL_ARGS = {
         'type': int,
         'required': False,
         'default': 8,
-        'help': 'The dimension of the LoRA update matrices.',},
+        'help': 'The dimension of the LoRA update matrices.',},}
+
+EMA_ARGS = {
     '--use_ema': {
         'required': False,
         'default': False,
         'action': 'store_true',
-        'help': 'Whether to use EMA model.'},}
+        'help': 'Whether to use EMA model.'},
+    '--offload_ema': {
+        'required': False,
+        'default': False,
+        'action': 'store_true',
+        'help': 'Offload EMA model to CPU during training step.'},
+    '--foreach_ema': {
+        'required': False,
+        'default': False,
+        'action': 'store_true',
+        'help': 'Use faster foreach implementation of EMAModel.'},}
 
 # DATASET ######################################################################
 
@@ -158,7 +175,8 @@ VALIDATION_ARGS = {
         'type': str,
         'required': False,
         'default': '',
-        'help': 'A prompt that is sampled during training for inference.'},
+        'nargs': '+',
+        'help': 'A set of prompts that are sampled during training for inference.'},
     '--validation_images': {
         'type': str,
         'required': False,
@@ -375,28 +393,26 @@ DIFFUSION_ARGS = {
         'type': float,
         'required': False,
         'default': 0.0,
-        'help': 'The scale of noise offset.'},}
+        'help': 'The scale of noise offset.'},
+    '--input_perturbation': {
+        'type': float,
+        'required': False,
+        'default': 0.0,
+        'help': 'The scale of input perturbation. Recommended 0.1.'},}
 
-# LORA #########################################################################
+# DREAM ########################################################################
 
-LORA_ARGS = {
-    **RANDOM_ARGS,
-    **OUTPUT_ARGS,
-    **VERSION_ARGS,
-    **MODEL_ARGS,
-    **DATASET_ARGS,
-    **PREPROCESSING_ARGS,
-    **CHECKPOINT_ARGS,
-    **VALIDATION_ARGS,
-    **ITERATION_ARGS,
-    **GRADIENT_ARGS,
-    **LEARNING_ARGS,
-    **LOSS_ARGS,
-    **PRECISION_ARGS,
-    **DISTRIBUTION_ARGS,
-    **OPTIMIZER_ARGS,
-    **FRAMEWORK_ARGS,
-    **DIFFUSION_ARGS,}
+DREAM_ARGS = {
+    '--dream_training': {
+        'required': False,
+        'default': False,
+        'action': 'store_true',
+        'help': 'Use the DREAM training method https://arxiv.org/abs/2312.00210.'},
+    '--preservation_rate': {
+        'type': float,
+        'required': False,
+        'default': 1.0,
+        'help': 'Dream detail preservation factor p (should be greater than 0; default=1.0, as suggested in the paper).'},}
 
 # VAE ##########################################################################
 
@@ -405,6 +421,7 @@ VAE_ARGS = {
     **OUTPUT_ARGS,
     **VERSION_ARGS,
     **MODEL_ARGS,
+    **EMA_ARGS,
     **DATASET_ARGS,
     **PREPROCESSING_ARGS,
     **CHECKPOINT_ARGS,
@@ -420,9 +437,32 @@ VAE_ARGS = {
     **FRAMEWORK_ARGS,
     **DIFFUSION_ARGS,}
 
+# LORA #########################################################################
+
+DDPM_ARGS = {
+    **RANDOM_ARGS,
+    **OUTPUT_ARGS,
+    **VERSION_ARGS,
+    **MODEL_ARGS,
+    **EMA_ARGS,
+    **DATASET_ARGS,
+    **PREPROCESSING_ARGS,
+    **CHECKPOINT_ARGS,
+    **VALIDATION_ARGS,
+    **ITERATION_ARGS,
+    **GRADIENT_ARGS,
+    **LEARNING_ARGS,
+    **LOSS_ARGS,
+    **PRECISION_ARGS,
+    **DISTRIBUTION_ARGS,
+    **OPTIMIZER_ARGS,
+    **FRAMEWORK_ARGS,
+    **DIFFUSION_ARGS,
+    **DREAM_ARGS,}
+
 # PARSER #######################################################################
 
-def parse_args(definitions: dict=LORA_ARGS, description: str='') -> argparse.Namespace:
+def parse_args(definitions: dict=DDPM_ARGS, description: str='') -> argparse.Namespace:
     __parser = argparse.ArgumentParser(description=description)
     # iterate on the argument definitions (str, dict)
     for __k, __d in definitions.items():
