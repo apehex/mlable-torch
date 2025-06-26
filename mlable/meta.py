@@ -174,13 +174,13 @@ VALIDATION_ARGS = {
     '--validation_prompts': {
         'type': str,
         'required': False,
-        'default': '',
+        'default': [],
         'nargs': '+',
         'help': 'A set of prompts that are sampled during training for inference.'},
     '--validation_images': {
         'type': str,
         'required': False,
-        'default': '',
+        'default': [],
         'nargs': '+',
         'help': 'A set of paths to the images used for validation.'},
     '--validation_epochs': {
