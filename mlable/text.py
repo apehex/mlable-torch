@@ -57,3 +57,21 @@ def rgb_hilbert(rows: list) -> np.ndarray:
     __rows = [[densecurves.hilbert.point(ord(__c), order=8, rank=3) for __c in __r] for __r in rows]
     # cast and reshape
     return np.array(__rows, dtype=np.uint8).reshape((__height, __width, 3))
+
+# RESTORE ######################################################################
+
+def restore(data: np.ndarray) -> np.ndarray:
+    # single channel array
+    __zeros = np.zeros(tuple(data.shape)[:-1] + (1,), dtype=data.dtype)
+    # add the leading zero in UTF-32-BE
+    return np.concat([__zeros, data], axis=-1)
+
+# DECODE #######################################################################
+
+def decode(data: np.ndarray) -> str:
+    # keep the batch and height axes (the output doesn't include newlines)
+    __shape = tuple(data.shape)[:-2] + (math.prod(data.shape[-2:]),)
+    # but the width and channel axes are merged into a single sequence
+    __bytes = data.reshape(__shape)
+    # interpret as UTF encodings
+    return np.apply_along_axis(lambda __r: bytes(__r.tolist()).decode('utf-32-be', errors='replace'), arr=__bytes, axis=-1)
