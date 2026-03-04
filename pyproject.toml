@@ -1,6 +1,6 @@
 [project]
 name = "mlable-torch"
-version = "0.3.0"
+version = "0.3.1"
 description = "PyTorch libs: layers, blocks, optimizers, etc."
 authors = [{ name = "apehex", email = "17317183+apehex@users.noreply.github.com" }]
 readme = ".github/README.md"
@@ -9,7 +9,7 @@ license-files = [".github/LICENSE.md"]
 requires-python = ">=3.10, <3.14"
 dependencies = [
     "numpy>=2.0",
-    "torch>=2.10",]
+    "torch>=2.9",]
 
 [dependency-groups]
 dev = ["pytest"]
