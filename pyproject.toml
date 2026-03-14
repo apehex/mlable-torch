@@ -1,6 +1,6 @@
 [project]
 name = "mlable-torch"
-version = "0.3.1"
+version = "0.4.0"
 description = "PyTorch libs: layers, blocks, optimizers, etc."
 authors = [{ name = "apehex", email = "17317183+apehex@users.noreply.github.com" }]
 readme = ".github/README.md"
@@ -8,6 +8,7 @@ license = "AGPL-3.0"
 license-files = [".github/LICENSE.md"]
 requires-python = ">=3.10, <3.14"
 dependencies = [
+    "densecurves>=0.2",
     "numpy>=2.0",
     "torch>=2.9",]
 
