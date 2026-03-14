@@ -1,7 +1,7 @@
 import torch
 import torch.nn
 
-import mlable.shapes
+import mlable.shaping.axes
 
 # DIVIDE #######################################################################
 
@@ -22,7 +22,7 @@ class Divide(torch.nn.Module):
             'insert': insert,
             'right': right,}
 
-    def call(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.divide(data=inputs, **self._config)
 
 # MERGE ########################################################################
@@ -40,7 +40,7 @@ class Merge(torch.nn.Module):
             'axis': axis,
             'right': right,}
 
-    def call(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.merge(data=inputs, **self._config)
 
 # SWAP #########################################################################
@@ -56,7 +56,7 @@ class Swap(torch.nn.Module):
         # save for import / export
         self._config = {'left_axis': left_axis, 'right_axis': right_axis,}
 
-    def call(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.swap(inputs, **self._config)
 
 # MOVE #########################################################################
@@ -72,5 +72,5 @@ class Move(torch.nn.Module):
         # save for import / export
         self._config = {'from_axis': from_axis, 'to_axis': to_axis,}
 
-    def call(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.move(inputs, **self._config)
