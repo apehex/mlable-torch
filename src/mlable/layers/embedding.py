@@ -15,8 +15,8 @@ class PositionalEmbedding(torch.nn.Module):
         super(PositionalEmbedding, self).__init__(**kwargs)
         # save for import, export, duplication etc
         self._config = {
-            'input_axis': input_axis,
-            'output_axis': output_axis,}
+            'input_axis': int(input_axis),
+            'output_axis': int(output_axis),}
         # build at runtime
         self._kernel = None
         self._built = False
@@ -77,10 +77,10 @@ class CompositeEmbedding(torch.nn.Embedding):
             **kwargs)
         # save for import / export
         self._config = {
-            'input_dim': input_dim,
-            'output_dim': output_dim,
-            'group_dim': -1 if group_dim is None else group_dim,
-            'merge_axes': merge_axes,
+            'input_dim': int(input_dim),
+            'output_dim': int(output_dim),
+            'group_dim': -1 if group_dim is None else int(group_dim),
+            'merge_axes': bool(merge_axes),
             **kwargs}
 
     def forward(
