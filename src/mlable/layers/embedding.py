@@ -8,27 +8,57 @@ import mlable.shapes
 class PositionalEmbedding(torch.nn.Module):
     def __init__(
         self,
-        time_dim: int,
-        embed_dim: int,
         input_axis: int=1, # axis of the sequence
         output_axis: int=-1, # axis of the embedding
         **kwargs
     ) -> None:
         super(PositionalEmbedding, self).__init__(**kwargs)
-        # weights
-        self._input_axis = input_axis
-        self._output_axis = output_axis
-        self._kernel = torch.nn.Parameter(torch.randn((time_dim, embed_dim)), requires_grad=True)
+        # save for import, export, duplication etc
+        self._config = {
+            'input_axis': input_axis,
+            'output_axis': output_axis,}
+        # build at runtime
+        self._kernel = None
+        self._built = False
+
+    def _build(
+        self,
+        inputs: torch.Tensor
+    ) -> None:
+        # lazy build at runtime
+        if (not self._built) or (self._kernel is None):
+            # parse the inputs
+            __shape = tuple(inputs.shape)
+            __rank = len(__shape)
+            # normalize the indexes
+            __axis_i = self._config['input_axis'] % __rank
+            __axis_o = self._config['output_axis'] % __rank
+            # handle the case where feature axis comes before the sequence axis
+            __dim_i = __shape[min(__axis_i, __axis_o)]
+            __dim_o = __shape[max(__axis_i, __axis_o)]
+            # built the kernel
+            self._kernel = torch.nn.Parameter(
+                torch.randn((__dim_i, __dim_o)),
+                device=inputs.device,
+                dtype=inputs.dtype,
+                requires_grad=True)
+            # register
+            self._built = True
 
     def forward(
         self,
         inputs: torch.Tensor
     ) -> torch.Tensor:
-        # shape
-        __input_shape = list(inputs.shape)
-        __axes = [self._input_axis % len(__input_shape), self._output_axis % len(__input_shape)]
-        __output_shape = [(__d if __i in __axes else 1) for __i, __d in enumerate(list(__input_shape))]
-        return inputs + self._kernel.view(*__output_shape) # each index in the sequence axis has a dedicated bias (different from dense bias)
+        # create the kernel, if necessary
+        self._build(inputs)
+        # parse the inputs
+        __shape = list(inputs.shape)
+        # where to apply the positional embedding
+        __axes = [self._config['input_axis'], self._config['output_axis']]
+        # extend the shape of the kernel to match the rank of the inputs
+        __shape = mlable.shapes.filter(__shape, axes=__axes)
+        # each index in the sequence axis has a dedicated bias (different from dense bias)
+        return inputs + self._kernel.view(*__shape)
 
 # TOKUN ########################################################################
 
