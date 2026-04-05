@@ -82,6 +82,8 @@ class CompositeEmbedding(torch.nn.Embedding):
             'group_dim': -1 if group_dim is None else int(group_dim),
             'merge_axes': bool(merge_axes),
             **kwargs}
+        # register
+        self._built = True
 
     def forward(
         self,

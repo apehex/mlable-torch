@@ -21,6 +21,8 @@ class Divide(torch.nn.Module):
             'factor': factor,
             'insert': insert,
             'right': right,}
+        # register
+        self._built = True
 
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.divide(data=inputs, **self._config)
@@ -39,6 +41,8 @@ class Merge(torch.nn.Module):
         self._config = {
             'axis': axis,
             'right': right,}
+        # register
+        self._built = True
 
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.merge(data=inputs, **self._config)
@@ -55,6 +59,8 @@ class Swap(torch.nn.Module):
         super(Swap, self).__init__(**kwargs)
         # save for import / export
         self._config = {'left_axis': left_axis, 'right_axis': right_axis,}
+        # register
+        self._built = True
 
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.swap(inputs, **self._config)
@@ -71,6 +77,8 @@ class Move(torch.nn.Module):
         super(Move, self).__init__(**kwargs)
         # save for import / export
         self._config = {'from_axis': from_axis, 'to_axis': to_axis,}
+        # register
+        self._built = True
 
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.move(inputs, **self._config)
