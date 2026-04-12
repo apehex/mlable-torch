@@ -31,6 +31,11 @@ def logroot2(n: int) -> int:
 def exproot2(n: int) -> int:
     return 2 ** logroot2(n)
 
+# AVERAGE ######################################################################
+
+def ema(average: float, current: float, factor: float=0.99) -> float:
+    return factor * average + (1.0 - factor) * current
+
 # CHECKS #######################################################################
 
 def iterable(data: any) -> bool:
