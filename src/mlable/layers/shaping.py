@@ -24,8 +24,21 @@ class Divide(torch.nn.Module):
         # register
         self._built = True
 
+    def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self._built = True
+
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.divide(data=inputs, **self._config)
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        return tuple(mlable.shapes.divide(shape, **self._config))
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)
 
 # MERGE ########################################################################
 
@@ -44,8 +57,21 @@ class Merge(torch.nn.Module):
         # register
         self._built = True
 
+    def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self._built = True
+
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.merge(data=inputs, **self._config)
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        return tuple(mlable.shapes.merge(shape, **self._config))
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)
 
 # SWAP #########################################################################
 
@@ -62,8 +88,21 @@ class Swap(torch.nn.Module):
         # register
         self._built = True
 
+    def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self._built = True
+
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.swap(inputs, **self._config)
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        return tuple(mlable.shapes.swap(shape, left=self._config['left_axis'], right=self._config['right_axis']))
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)
 
 # MOVE #########################################################################
 
@@ -80,5 +119,18 @@ class Move(torch.nn.Module):
         # register
         self._built = True
 
+    def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self._built = True
+
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.move(inputs, **self._config)
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        return tuple(mlable.shapes.move(shape, before=self._config['from_axis'], after=self._config['to_axis']))
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)

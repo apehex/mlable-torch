@@ -21,27 +21,26 @@ class PositionalEmbedding(torch.nn.Module):
         self._kernel = None
         self._built = False
 
-    def _build(
+    def build(
         self,
-        inputs: torch.Tensor
+        shape: tuple,
+        device: object=None,
+        dtype: object=None,
     ) -> None:
         # lazy build at runtime
         if (not self._built) or (self._kernel is None):
             # parse the inputs
-            __shape = tuple(inputs.shape)
-            __rank = len(__shape)
+            __rank = len(shape)
             # normalize the indexes
             __axis_i = self._config['input_axis'] % __rank
             __axis_o = self._config['output_axis'] % __rank
             # handle the case where feature axis comes before the sequence axis
-            __dim_i = __shape[min(__axis_i, __axis_o)]
-            __dim_o = __shape[max(__axis_i, __axis_o)]
+            __dim_i = shape[min(__axis_i, __axis_o)]
+            __dim_o = shape[max(__axis_i, __axis_o)]
             # built the kernel
             self._kernel = torch.nn.Parameter(
                 torch.randn((__dim_i, __dim_o)),
-                device=inputs.device,
-                dtype=inputs.dtype,
-                requires_grad=True)
+                requires_grad=True).to(device=device, dtype=dtype)
             # register
             self._built = True
 
@@ -49,16 +48,26 @@ class PositionalEmbedding(torch.nn.Module):
         self,
         inputs: torch.Tensor
     ) -> torch.Tensor:
-        # create the kernel, if necessary
-        self._build(inputs)
         # parse the inputs
-        __shape = list(inputs.shape)
+        __shape = tuple(inputs.shape)
+        # create the kernel, if necessary
+        self.build(shape=__shape, device=inputs.device, dtype=inputs.dtype)
         # where to apply the positional embedding
         __axes = [self._config['input_axis'], self._config['output_axis']]
         # extend the shape of the kernel to match the rank of the inputs
         __shape = mlable.shapes.filter(__shape, axes=__axes)
         # each index in the sequence axis has a dedicated bias (different from dense bias)
         return inputs + self._kernel.view(*__shape)
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        return tuple(shape)
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)
 
 # TOKUN ########################################################################
 
@@ -85,6 +94,9 @@ class CompositeEmbedding(torch.nn.Embedding):
         # register
         self._built = True
 
+    def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self._built = True
+
     def forward(
         self,
         inputs: torch.Tensor
@@ -96,13 +108,36 @@ class CompositeEmbedding(torch.nn.Embedding):
             shape=tuple(inputs.shape),
             axis=-1,
             factor=max(1, __group),
-            insert=True,
-            right=True)
+            insert=bool(__group > 1),
+            right=bool(__group > 1))
         # leave the shape unchanged if the group dimension is negative (..., S*G) => (..., S, G)
-        __outputs = inputs.reshape(tuple(inputs.shape) if (__group <= 1) else __shape)
+        __outputs = inputs.reshape(__shape)
         # embed the input IDs (..., S, G) -> (..., S, G, E)
         __outputs = super(CompositeEmbedding, self).forward(__outputs)
         # merge the last 2 axes (..., S, G, E) -> (..., S, G*E)
         __shape = mlable.shapes.merge(shape=tuple(__outputs.shape), axis=-1, right=False)
-        # group only if requested
+        # combine only if requested
         return __outputs.reshape(__shape if __merge else tuple(__outputs.shape))
+
+    def compute_output_shape(self, shape: tuple) -> tuple:
+        __embed = self._config.get('output_dim', 1)
+        __group = self._config.get('group_dim', -1)
+        __merge = self._config.get('merge_axes', True)
+        # split the last axis in blocks of fixed dimension, if requested (..., S*G) => (..., S, G)
+        __shape = mlable.shapes.divide(
+            shape=tuple(shape),
+            axis=-1,
+            factor=max(1, __group),
+            insert=bool(__group > 1),
+            right=bool(__group > 1))
+        # embed the inputs (..., S, G) => (..., S, G, E)
+        __shape = list(__shape) + [__embed] + (not __merge) * [1]
+        # merge the last 2 axes, if requested (..., S, G, E) -> (..., S, G*E)
+        return tuple(mlable.shapes.merge(shape=__shape, axis=-1, right=False))
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**config, **kwargs)
