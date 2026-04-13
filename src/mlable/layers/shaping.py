@@ -38,7 +38,7 @@ class Divide(torch.nn.Module):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})
 
 # MERGE ########################################################################
 
@@ -71,7 +71,7 @@ class Merge(torch.nn.Module):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})
 
 # SWAP #########################################################################
 
@@ -102,7 +102,7 @@ class Swap(torch.nn.Module):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})
 
 # MOVE #########################################################################
 
@@ -133,4 +133,4 @@ class Move(torch.nn.Module):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})

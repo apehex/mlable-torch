@@ -67,7 +67,7 @@ class PositionalEmbedding(torch.nn.Module):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})
 
 # TOKUN ########################################################################
 
@@ -140,4 +140,4 @@ class CompositeEmbedding(torch.nn.Embedding):
 
     @classmethod
     def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
-        return cls(**config, **kwargs)
+        return cls(**{**config, **kwargs})
