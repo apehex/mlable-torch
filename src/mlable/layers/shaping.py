@@ -30,7 +30,10 @@ class Divide(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.divide(data=inputs, **self._config)
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def reset_parameters(self) -> None:
+        return None
+
+    def output_shape(self, shape: tuple) -> tuple:
         return tuple(mlable.shapes.divide(shape, **self._config))
 
     def get_config(self) -> dict:
@@ -63,7 +66,10 @@ class Merge(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.merge(data=inputs, **self._config)
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def reset_parameters(self) -> None:
+        return None
+
+    def output_shape(self, shape: tuple) -> tuple:
         return tuple(mlable.shapes.merge(shape, **self._config))
 
     def get_config(self) -> dict:
@@ -94,7 +100,10 @@ class Swap(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.swap(inputs, **self._config)
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def reset_parameters(self) -> None:
+        return None
+
+    def output_shape(self, shape: tuple) -> tuple:
         return tuple(mlable.shapes.swap(shape, left=self._config['left_axis'], right=self._config['right_axis']))
 
     def get_config(self) -> dict:
@@ -125,7 +134,10 @@ class Move(torch.nn.Module):
     def forward(self, inputs: torch.Tensor, **kwargs) -> torch.Tensor:
         return mlable.shaping.axes.move(inputs, **self._config)
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def reset_parameters(self) -> None:
+        return None
+
+    def output_shape(self, shape: tuple) -> tuple:
         return tuple(mlable.shapes.move(shape, before=self._config['from_axis'], after=self._config['to_axis']))
 
     def get_config(self) -> dict:

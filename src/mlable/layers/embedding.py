@@ -59,7 +59,10 @@ class PositionalEmbedding(torch.nn.Module):
         # each index in the sequence axis has a dedicated bias (different from dense bias)
         return inputs + self._kernel.view(*__shape)
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def reset_parameters(self) -> None:
+        torch.nn.init.normal_(self._kernel)
+
+    def output_shape(self, shape: tuple) -> tuple:
         return tuple(shape)
 
     def get_config(self) -> dict:
@@ -119,7 +122,7 @@ class CompositeEmbedding(torch.nn.Embedding):
         # combine only if requested
         return __outputs.reshape(__shape if __merge else tuple(__outputs.shape))
 
-    def compute_output_shape(self, shape: tuple) -> tuple:
+    def output_shape(self, shape: tuple) -> tuple:
         __embed = self._config.get('output_dim', 1)
         __group = self._config.get('group_dim', -1)
         __merge = self._config.get('merge_axes', True)
