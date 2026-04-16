@@ -45,3 +45,33 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
         return (
             0.5 * (self._config['start_rate'] + self._config['end_rate'])
             + 0.5 * (self._config['start_rate'] - self._config['end_rate']) * math.cos(math.pi * (iter_num / self._config['total_num'])))
+
+# WAVE #########################################################################
+
+class WaveLR(torch.optim.lr_scheduler.SequentialLR):
+
+    def __init__(
+        self,
+        optimizer_obj: Optimizer,
+        start_rate: float = 0.0001,
+        end_rate: float = 0.01,
+        total_num: int = 128,
+        warmup_num: int = -1,
+    ) -> None:
+        # linear warmup from start factor to 1
+        __warmup = torch.optim.lr_scheduler.LinearLR(
+            optimizer=optimizer_obj,
+            start_factor=start_rate,
+            end_factor=1.0,
+            total_iters=warmup_num)
+        # cosine decay from 1 to end factor
+        __decay = CosineLR(
+            optimizer_obj=optimizer_obj,
+            start_rate=1.0,
+            end_rate=end_rate,
+            total_num=max(1, total_num - warmup_num))
+        # put the 2 schedulers one after another
+        super().__init__(
+            optimizer=optimizer_obj,
+            schedulers=[__warmup, __decay],
+            milestones=[warmup_num],)
