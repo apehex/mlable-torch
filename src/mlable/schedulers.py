@@ -1,0 +1,47 @@
+import math
+
+import torch
+import torch.optim.lr_scheduler
+
+# COSINE #######################################################################
+
+class CosineLR(torch.optim.lr_scheduler.LRScheduler):
+
+    def __init__(
+        self,
+        optimizer_obj: Optimizer,
+        start_rate: float = 1.0,
+        end_rate: float = 0.01,
+        total_num: int = 128,
+        current_num: int = -1,
+    ) -> None:
+        # save for import, export, duplication etc
+        self._config = {
+            'start_rate': float(start_rate),
+            'end_rate': float(end_rate),
+            'total_num': int(total_num),
+            'current_num': int(current_num),}
+        # compute the initial LR
+        super().__init__(optimizer_obj, current_num)
+
+    @override
+    def get_lr(self) -> list[float | Tensor]:
+        """Compute the next learning rate for each of the optimizer_obj's groups."""
+        _warn_get_lr_called_within_step(self)
+        # (T-1) is not defined when T is zero
+        if self.last_epoch == 0:
+            return [
+                __g["lr"] * self._config['start_rate']
+                for __g in self.optimizer.param_groups]
+        # keep the LR constant once the iteration counter exceeds the total
+        if self._is_initial or (self.last_epoch > self._config['total_num']):
+            return _param_groups_val_list(self.optimizer, "lr")
+        # 0 < T < T_e
+        return [
+            __g["lr"] * (self._compute_rate(self.last_epoch) / self._compute_rate(self.last_epoch - 1))
+            for __g in self.optimizer.param_groups]
+
+    def _compute_rate(self, iter_num: int) -> float:
+        return (
+            0.5 * (self._config['start_rate'] + self._config['end_rate'])
+            + 0.5 * (self._config['start_rate'] - self._config['end_rate']) * math.cos(math.pi * (iter_num / self._config['total_num'])))
