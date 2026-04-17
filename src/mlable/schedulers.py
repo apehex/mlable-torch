@@ -14,13 +14,15 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
         end_rate: float=0.01,
         total_num: int=128,
         current_num: int=-1,
+        epsilon_val: float=1e-5,
     ) -> None:
         # save for import, export, duplication etc
         self._config = {
-            'start_rate': float(start_rate),
-            'end_rate': float(end_rate),
-            'total_num': int(total_num),
-            'current_num': int(current_num),}
+            'start_rate': max(epsilon_val, float(start_rate)),
+            'end_rate': max(epsilon_val, float(end_rate)),
+            'total_num': max(1, int(total_num)),
+            'current_num': max(0, int(current_num)),
+            'epsilon_val': epsilon_val,}
         # compute the initial LR
         super().__init__(optimizer_obj, current_num)
 
