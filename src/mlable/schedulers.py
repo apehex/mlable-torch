@@ -28,8 +28,6 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
 
     @override
     def get_lr(self) -> list[float | Tensor]:
-        """Compute the next learning rate for each of the optimizer_obj's groups."""
-        _warn_get_lr_called_within_step(self)
         # (T-1) is not defined when T is zero
         if self.last_epoch == 0:
             return [
