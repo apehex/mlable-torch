@@ -9,7 +9,7 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
 
     def __init__(
         self,
-        optimizer_obj: Optimizer,
+        optimizer_obj: object,
         start_rate: float=1.0,
         end_rate: float=0.01,
         total_num: int=128,
@@ -55,7 +55,7 @@ class WaveLR(torch.optim.lr_scheduler.SequentialLR):
 
     def __init__(
         self,
-        optimizer_obj: Optimizer,
+        optimizer_obj: object,
         start_rate: float=0.0001,
         end_rate: float=0.01,
         total_num: int=128,
