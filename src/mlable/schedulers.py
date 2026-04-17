@@ -21,10 +21,12 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
             'start_rate': max(epsilon_val, float(start_rate)),
             'end_rate': max(epsilon_val, float(end_rate)),
             'total_num': max(1, int(total_num)),
-            'current_num': max(0, int(current_num)),
+            'current_num': max(-1, int(current_num)),
             'epsilon_val': epsilon_val,}
         # compute the initial LR
-        super().__init__(optimizer_obj, current_num)
+        super().__init__(
+            optimizer=optimizer_obj,
+            last_epoch=self._config['current_num'])
 
     def get_lr(self) -> list[float | torch.Tensor]:
         # (T-1) is not defined when T is zero
