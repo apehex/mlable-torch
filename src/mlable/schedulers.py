@@ -26,8 +26,7 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
         # compute the initial LR
         super().__init__(optimizer_obj, current_num)
 
-    @override
-    def get_lr(self) -> list[float | Tensor]:
+    def get_lr(self) -> list[float | torch.Tensor]:
         # (T-1) is not defined when T is zero
         if self.last_epoch == 0:
             return [
@@ -35,7 +34,7 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
                 for __g in self.optimizer.param_groups]
         # keep the LR constant once the iteration counter exceeds the total
         if self._is_initial or (self.last_epoch > self._config['total_num']):
-            return _param_groups_val_list(self.optimizer, "lr")
+            return torch.optim.lr_scheduler._param_groups_val_list(self.optimizer, "lr")
         # 0 < T < T_e
         return [
             __g["lr"] * (
