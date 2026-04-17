@@ -162,10 +162,13 @@ class TestCosineLR:
         # continue 5 more steps
         remaining_s1 = collect_lrs(s1, 5)
 
-        # restore and run the same 5 steps
-        optimizer.param_groups[0]['lr'] = lr_after_5
+        # restore both the scheduler
         s2 = CosineLR(optimizer, start_rate=start, end_rate=end, total_num=total)
         s2.load_state_dict(state)
+        # restore the LR in the optimizer
+        optimizer.param_groups[0]['lr'] = lr_after_5
+
+        # run the same 5 steps
         remaining_s2 = collect_lrs(s2, 5)
 
         for t, (a, b) in enumerate(zip(remaining_s1, remaining_s2)):
@@ -221,7 +224,7 @@ class TestWaveLR:
         history = collect_lrs(scheduler, warmup)
 
         for t, (lr,) in enumerate(history):
-            expected = base_lr * linear_factor(t, warmup, start_rate, 1.0)
+            expected = base_lr * linear_factor(t, warmup - 1, start_rate, 1.0)
             assert lr == pytest.approx(expected, rel=1e-6), f"warmup last_epoch={t}"
 
     def test_end_lr(self, optimizer):
@@ -273,10 +276,14 @@ class TestWaveLR:
         # continue
         remaining_original = collect_lrs(scheduler, total - mid)
 
-        # restore
-        optimizer.param_groups[0]['lr'] = lr_at_mid
+        # restore the scheduler
         s2 = WaveLR(optimizer, start_rate=0.01, end_rate=0.01, total_num=total, warmup_num=warmup)
         s2.load_state_dict(state)
+
+        # restore the LR in the optimizer
+        optimizer.param_groups[0]['lr'] = lr_at_mid
+
+        # run the same steps
         remaining_restored = collect_lrs(s2, total - mid)
 
         for t, (a, b) in enumerate(zip(remaining_original, remaining_restored)):

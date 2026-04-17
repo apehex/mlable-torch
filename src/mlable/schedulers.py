@@ -60,14 +60,14 @@ class WaveLR(torch.optim.lr_scheduler.SequentialLR):
         start_rate: float=0.0001,
         end_rate: float=0.01,
         total_num: int=128,
-        warmup_num: int=-1,
+        warmup_num: int=32,
     ) -> None:
         # linear warmup from start factor to 1
         __warmup = torch.optim.lr_scheduler.LinearLR(
             optimizer=optimizer_obj,
             start_factor=start_rate,
             end_factor=1.0,
-            total_iters=warmup_num)
+            total_iters=max(1, warmup_num - 1))
         # cosine decay from 1 to end factor
         __decay = CosineLR(
             optimizer_obj=optimizer_obj,
