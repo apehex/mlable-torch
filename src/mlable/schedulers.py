@@ -10,10 +10,10 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
     def __init__(
         self,
         optimizer_obj: Optimizer,
-        start_rate: float = 1.0,
-        end_rate: float = 0.01,
-        total_num: int = 128,
-        current_num: int = -1,
+        start_rate: float=1.0,
+        end_rate: float=0.01,
+        total_num: int=128,
+        current_num: int=-1,
     ) -> None:
         # save for import, export, duplication etc
         self._config = {
@@ -38,13 +38,16 @@ class CosineLR(torch.optim.lr_scheduler.LRScheduler):
             return _param_groups_val_list(self.optimizer, "lr")
         # 0 < T < T_e
         return [
-            __g["lr"] * (self._compute_rate(self.last_epoch) / self._compute_rate(self.last_epoch - 1))
+            __g["lr"] * (
+                self._compute_rate(self.last_epoch)
+                / self._compute_rate(self.last_epoch - 1))
             for __g in self.optimizer.param_groups]
 
     def _compute_rate(self, iter_num: int) -> float:
         return (
             0.5 * (self._config['start_rate'] + self._config['end_rate'])
-            + 0.5 * (self._config['start_rate'] - self._config['end_rate']) * math.cos(math.pi * (iter_num / self._config['total_num'])))
+            + 0.5 * (self._config['start_rate'] - self._config['end_rate'])
+            * math.cos(math.pi * (iter_num / self._config['total_num'])))
 
 # WAVE #########################################################################
 
@@ -53,10 +56,10 @@ class WaveLR(torch.optim.lr_scheduler.SequentialLR):
     def __init__(
         self,
         optimizer_obj: Optimizer,
-        start_rate: float = 0.0001,
-        end_rate: float = 0.01,
-        total_num: int = 128,
-        warmup_num: int = -1,
+        start_rate: float=0.0001,
+        end_rate: float=0.01,
+        total_num: int=128,
+        warmup_num: int=-1,
     ) -> None:
         # linear warmup from start factor to 1
         __warmup = torch.optim.lr_scheduler.LinearLR(
