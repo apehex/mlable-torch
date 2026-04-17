@@ -36,7 +36,11 @@ def linear_factor(current, total, start, end):
     return start + (end - start) * (min(current, total) / total)
 
 def collect_lrs(scheduler, steps):
-    """Step the scheduler and collect group LRs at each step."""
+    """Collect group LRs at each step, reading before advancing.
+
+    history[0] is the LR at last_epoch=0 (set during __init__).
+    history[t] is the LR at last_epoch=t.
+    """
     history = []
     for _ in range(steps):
         history.append([g['lr'] for g in scheduler.optimizer.param_groups])
@@ -52,36 +56,36 @@ class TestCosineLR:
         total, start, end = 10, 1.0, 0.01
         base_lr = 0.05
         scheduler = CosineLR(optimizer, start_rate=start, end_rate=end, total_num=total)
-        history = collect_lrs(scheduler, 15)
+        history = collect_lrs(scheduler, total + 5)
 
-        for t, (lr,) in enumerate(history, start=1):
+        for t, (lr,) in enumerate(history):
             expected = base_lr * cosine_factor(min(t, total), total, start, end)
-            assert lr == pytest.approx(expected, rel=1e-9), f"step {t}"
+            assert lr == pytest.approx(expected, rel=1e-9), f"last_epoch={t}"
 
     def test_decay_multi_group(self, optimizer_multi):
         """Factor is applied identically to each param group."""
         total, start, end = 8, 1.0, 0.1
         scheduler = CosineLR(optimizer_multi, start_rate=start, end_rate=end, total_num=total)
-        history = collect_lrs(scheduler, 12)
+        history = collect_lrs(scheduler, total + 4)
 
-        for t, lrs in enumerate(history, start=1):
+        for t, lrs in enumerate(history):
             factor = cosine_factor(min(t, total), total, start, end)
-            assert lrs[0] == pytest.approx(0.05 * factor, rel=1e-9), f"group 0, step {t}"
-            assert lrs[1] == pytest.approx(0.5 * factor, rel=1e-9), f"group 1, step {t}"
+            assert lrs[0] == pytest.approx(0.05 * factor, rel=1e-9), f"group 0, last_epoch={t}"
+            assert lrs[1] == pytest.approx(0.5 * factor, rel=1e-9), f"group 1, last_epoch={t}"
 
     def test_warmup(self, optimizer):
         """Increasing schedule: end_rate > start_rate."""
         total, start, end = 10, 0.1, 1.0
         base_lr = 0.05
         scheduler = CosineLR(optimizer, start_rate=start, end_rate=end, total_num=total)
-        history = collect_lrs(scheduler, total)
+        history = collect_lrs(scheduler, total + 1)
 
         # LR should increase monotonically
         lrs = [h[0] for h in history]
         assert all(b >= a for a, b in zip(lrs, lrs[1:])), "LR should be non-decreasing during warmup"
 
-        # final LR should reach base_lr * end_rate
-        assert lrs[-1] == pytest.approx(base_lr * end, rel=1e-9)
+        # at last_epoch=total, LR should reach base_lr * end_rate
+        assert lrs[total] == pytest.approx(base_lr * end, rel=1e-9)
 
     def test_constant_after_total(self, optimizer):
         """LR stays constant once total_num is exceeded."""
@@ -89,19 +93,19 @@ class TestCosineLR:
         scheduler = CosineLR(optimizer, start_rate=1.0, end_rate=0.1, total_num=total)
         history = collect_lrs(scheduler, total + 10)
 
-        lr_at_total = history[total - 1][0]
+        lr_at_total = history[total][0]
         for t in range(total, len(history)):
-            assert history[t][0] == pytest.approx(lr_at_total, rel=1e-12), f"step {t + 1}"
+            assert history[t][0] == pytest.approx(lr_at_total, rel=1e-12), f"last_epoch={t}"
 
     def test_endpoints(self, optimizer):
         """Factor equals start_rate at t=0 and end_rate at t=total."""
         total, start, end = 20, 0.5, 0.05
         base_lr = 0.05
         scheduler = CosineLR(optimizer, start_rate=start, end_rate=end, total_num=total)
-        history = collect_lrs(scheduler, total)
+        history = collect_lrs(scheduler, total + 1)
 
-        assert history[0][0] == pytest.approx(base_lr * start, rel=1e-9), "t=1 (after first step)"
-        assert history[-1][0] == pytest.approx(base_lr * end, rel=1e-9), "t=total"
+        assert history[0][0] == pytest.approx(base_lr * start, rel=1e-9), "last_epoch=0"
+        assert history[total][0] == pytest.approx(base_lr * end, rel=1e-9), "last_epoch=total"
 
     def test_symmetry(self, optimizer):
         """Cosine is symmetric: factor(k) + factor(total - k) = start + end."""
@@ -122,6 +126,9 @@ class TestCosineLR:
         cosine = CosineLR(optimizer, start_rate=start, end_rate=end, total_num=total)
         exp = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
 
+        # after init, both schedulers have stepped to last_epoch=0
+        # history[0] = LR at last_epoch=0 = base_lr * start_factor * 1.0 (exp does nothing at init)
+        # we step both and check after each step
         for t in range(1, 15):
             cosine.step()
             exp.step()
@@ -129,7 +136,7 @@ class TestCosineLR:
                 base_lr
                 * cosine_factor(min(t, total), total, start, end)
                 * gamma ** t)
-            assert optimizer.param_groups[0]['lr'] == pytest.approx(expected, rel=1e-9), f"step {t}"
+            assert optimizer.param_groups[0]['lr'] == pytest.approx(expected, rel=1e-9), f"last_epoch={t}"
 
     def test_get_last_lr(self, optimizer):
         """get_last_lr matches the optimizer's current LR after each step."""
@@ -162,7 +169,7 @@ class TestCosineLR:
         remaining_s2 = collect_lrs(s2, 5)
 
         for t, (a, b) in enumerate(zip(remaining_s1, remaining_s2)):
-            assert a[0] == pytest.approx(b[0], rel=1e-12), f"step {t + 6}"
+            assert a[0] == pytest.approx(b[0], rel=1e-12), f"last_epoch={t + 5}"
 
 # WAVE LR ######################################################################
 
@@ -173,15 +180,15 @@ class TestWaveLR:
         warmup = 10
         total = 50
         scheduler = WaveLR(optimizer, start_rate=0.01, end_rate=0.01, total_num=total, warmup_num=warmup)
-        history = collect_lrs(scheduler, total)
+        history = collect_lrs(scheduler, total + 1)
         lrs = [h[0] for h in history]
 
-        # warmup phase: LR should be increasing
+        # warmup phase (last_epoch 0 to warmup-1): LR should be increasing
         warmup_lrs = lrs[:warmup]
         assert all(b >= a for a, b in zip(warmup_lrs, warmup_lrs[1:])), \
             "LR should be non-decreasing during warmup"
 
-        # decay phase: LR should be decreasing
+        # decay phase (last_epoch warmup onward): LR should be decreasing
         decay_lrs = lrs[warmup:]
         assert all(b <= a for a, b in zip(decay_lrs, decay_lrs[1:])), \
             "LR should be non-increasing during decay"
@@ -192,13 +199,13 @@ class TestWaveLR:
         total = 50
         base_lr = 0.05
         scheduler = WaveLR(optimizer, start_rate=0.01, end_rate=0.01, total_num=total, warmup_num=warmup)
-        history = collect_lrs(scheduler, total)
+        history = collect_lrs(scheduler, total + 1)
         lrs = [h[0] for h in history]
 
         peak_idx = max(range(len(lrs)), key=lambda i: lrs[i])
         # peak should be at or near the warmup boundary
-        assert abs(peak_idx - (warmup - 1)) <= 1, \
-            f"Peak at step {peak_idx}, expected near step {warmup - 1}"
+        assert abs(peak_idx - warmup) <= 1, \
+            f"Peak at last_epoch={peak_idx}, expected near last_epoch={warmup}"
 
         # peak should be close to base_lr (factor ~1.0)
         assert lrs[peak_idx] == pytest.approx(base_lr, rel=0.05)
@@ -213,9 +220,9 @@ class TestWaveLR:
         scheduler = WaveLR(optimizer, start_rate=start_rate, end_rate=0.01, total_num=total, warmup_num=warmup)
         history = collect_lrs(scheduler, warmup)
 
-        for t, (lr,) in enumerate(history, start=1):
+        for t, (lr,) in enumerate(history):
             expected = base_lr * linear_factor(t, warmup, start_rate, 1.0)
-            assert lr == pytest.approx(expected, rel=1e-6), f"warmup step {t}"
+            assert lr == pytest.approx(expected, rel=1e-6), f"warmup last_epoch={t}"
 
     def test_end_lr(self, optimizer):
         """At the end of the schedule, LR should reach base_lr * end_rate."""
@@ -224,9 +231,9 @@ class TestWaveLR:
         end_rate = 0.02
         base_lr = 0.05
         scheduler = WaveLR(optimizer, start_rate=0.01, end_rate=end_rate, total_num=total, warmup_num=warmup)
-        history = collect_lrs(scheduler, total)
+        history = collect_lrs(scheduler, total + 1)
 
-        assert history[-1][0] == pytest.approx(base_lr * end_rate, rel=1e-3)
+        assert history[total][0] == pytest.approx(base_lr * end_rate, rel=1e-3)
 
     def test_multi_group(self, optimizer_multi):
         """WaveLR applies the same schedule proportionally to each param group."""
@@ -238,7 +245,7 @@ class TestWaveLR:
         for t, lrs in enumerate(history):
             ratio = lrs[1] / lrs[0]
             assert ratio == pytest.approx(10.0, rel=1e-3), \
-                f"step {t + 1}: group ratio {ratio} != 10"
+                f"last_epoch={t}: group ratio {ratio} != 10"
 
     def test_constant_after_total(self, optimizer):
         """LR stays constant once total_num is exceeded."""
@@ -247,9 +254,9 @@ class TestWaveLR:
         scheduler = WaveLR(optimizer, start_rate=0.01, end_rate=0.02, total_num=total, warmup_num=warmup)
         history = collect_lrs(scheduler, total + 10)
 
-        lr_at_total = history[total - 1][0]
+        lr_at_total = history[total][0]
         for t in range(total, len(history)):
-            assert history[t][0] == pytest.approx(lr_at_total, rel=1e-6), f"step {t + 1}"
+            assert history[t][0] == pytest.approx(lr_at_total, rel=1e-6), f"last_epoch={t}"
 
     def test_state_dict_roundtrip(self, optimizer):
         """Save and load produces identical LR sequences."""
@@ -273,4 +280,4 @@ class TestWaveLR:
         remaining_restored = collect_lrs(s2, total - mid)
 
         for t, (a, b) in enumerate(zip(remaining_original, remaining_restored)):
-            assert a[0] == pytest.approx(b[0], rel=1e-6), f"step {mid + t + 1}"
+            assert a[0] == pytest.approx(b[0], rel=1e-6), f"last_epoch={mid + t}"
