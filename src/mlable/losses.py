@@ -12,7 +12,7 @@ def mse_loss(
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor,
 ) -> torch.Tensor:
-    """KL divergence over (B, T, V) raw logits with (B, T) mask."""
+    """MSE over (B, T, H) features with (B, T) mask."""
     # expand the shape of the mask with singleton axes
     __shape = mlable.shapes.filter(tuple(target_arr.shape), axes=list(range(mask_arr.ndim)))
     # match the rank and dtype for the multiplications
