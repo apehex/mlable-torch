@@ -37,9 +37,10 @@ def kl_div(
     mask_arr: torch.Tensor,
 ) -> torch.Tensor:
     """KL divergence over (B, T, V) raw logits with (B, T) mask."""
-    __shape = tuple(target_arr.shape)
     # match the rank for the multiplications
-    __mask = mask_arr.reshape(mlable.shapes.filter(__shape, axes=list(range(mask_arr.ndim))))
+    __mask = mask_arr.reshape(mlable.shapes.filter(
+        shape=tuple(target_arr.shape),
+        axes=list(range(mask_arr.ndim))))
     # compute the point-wise KL-divergence
     __outputs = torch.nn.functional.kl_div(
         input=torch.nn.functional.log_softmax(predict_arr.float(), dim=-1),
