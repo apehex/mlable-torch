@@ -25,7 +25,7 @@ class TestTop1MatchRate:
 
     def test_rate_one_on_identical_logits(self):
         __x = torch.randn(_B, _T, _V)
-        assert mlable.metrics.topk_rate(__x, __x, 1) == pytest.approx(1.0)
+        assert mlable.metrics.topk_rate(__x, __x, k_num=1) == pytest.approx(1.0)
 
     def test_rate_zero_when_all_mismatch(self):
         # teacher always picks token 0, student always picks token 1
@@ -33,7 +33,7 @@ class TestTop1MatchRate:
         __t[:, :, 0] = 1.0
         __s = torch.zeros(_B, _T, _V)
         __s[:, :, 1] = 1.0
-        assert mlable.metrics.topk_rate(__t, __s, 1) == pytest.approx(0.0)
+        assert mlable.metrics.topk_rate(__t, __s, k_num=1) == pytest.approx(0.0)
 
     def test_partial_match(self):
         # B=1, T=4: first 2 positions match, last 2 do not
@@ -42,18 +42,18 @@ class TestTop1MatchRate:
         __t[:, :, 0] = 1.0          # teacher always picks 0
         __s[:, :2, 0] = 1.0         # student picks 0 for first 2
         __s[:, 2:, 1] = 1.0         # student picks 1 for last 2
-        assert mlable.metrics.topk_rate(__t, __s, 1) == pytest.approx(0.5)
+        assert mlable.metrics.topk_rate(__t, __s, k_num=1) == pytest.approx(0.5)
 
     def test_returns_scalar(self):
         __x = torch.randn(_B, _T, _V)
-        __y = mlable.metrics.topk_rate(__x, __x, 1)
+        __y = mlable.metrics.topk_rate(__x, __x, k_num=1)
         assert isinstance(__y, torch.Tensor)
         assert len(__y.shape) == 0
 
     def test_value_in_unit_interval(self):
         __t = torch.randn(_B, _T, _V)
         __s = torch.randn(_B, _T, _V)
-        __r = mlable.metrics.topk_rate(__t, __s, 1)
+        __r = mlable.metrics.topk_rate(__t, __s, k_num=1)
         assert 0.0 <= __r <= 1.0
 
 # TOPK MATCH RATE ##############################################################
