@@ -14,33 +14,20 @@ Overview of the repository structure.
 | `   -- invariants.md`     | Hard constraints                      |
 | `   -- references.md`     | External references                   |
 | `   -- roadmap.md`        | Planning of the project               |
+| `   -- sources/`          | Documentation of package modules      |
+| `      -- index.md`       | Module and symbol reference           |
 
 ## Sources
 
 | Path                              | Purpose                                       |
 | --------------------------------- | --------------------------------------------- |
 | `-- src/mlable/`                  | Root of the Python package                    |
-| `   -- encoding/`                 | Encoding helpers                              |
-| `      -- rgb.py`                 | RGB encoding utilities                        |
-| `   -- layers/`                   | Standalone `torch.nn.Module` layers           |
-| `      -- embedding.py`           | Embedding layers                              |
-| `      -- normalization.py`       | Normalization layers                          |
-| `      -- shaping.py`             | Shaping layers                                |
-| `   -- shaping/`                  | Axis and spatial transforms                   |
-| `      -- axes.py`                | Axis manipulation helpers                     |
-| `      -- hilbert.py`             | Hilbert curve transforms                      |
-| `   -- losses.py`                 | Loss functions                                |
-| `   -- metrics.py`                | Metric functions                              |
-| `   -- models.py`                 | Model building blocks                         |
-| `   -- schedulers.py`             | LR schedulers                                 |
-| `   -- shapes.py`                 | Shape arithmetic helpers                      |
-| `   -- utils.py`                  | General utilities                             |
+| `-- docs/sources/`                | Detailed documentation of package modules     |
+
+See `docs/sources/index.md` for the full module breakdown.
 
 ## Tests
 
 | Path                              | Purpose                               |
 | --------------------------------- | ------------------------------------- |
 | `-- tests/`                       | Unit tests mirroring package layout   |
-| `   -- test_losses.py`            | Tests for `losses.py`                 |
-| `   -- test_metrics.py`           | Tests for `metrics.py`                |
-| `   -- test_schedulers.py`        | Tests for `schedulers.py`             |
