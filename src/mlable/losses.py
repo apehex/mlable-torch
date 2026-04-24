@@ -11,6 +11,7 @@ def mse_loss(
     predict_arr: torch.Tensor,
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor=None,
+    reduce_opt: bool=True,
 ) -> torch.Tensor:
     """MSE over (B, T, H) features with (B, T) mask."""
     # compute the element-wise MSE
@@ -27,8 +28,10 @@ def mse_loss(
     __mask = __mask.reshape(mlable.shapes.filter(
         shape=tuple(__outputs.shape),
         axes=list(range(__mask.ndim)))).float()
-    # calculate the average over the masked positions only
-    return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)
+    # filter the results for the positions outside of the mask
+    __outputs = __outputs * __mask
+    # average over the masked positions only, if requested
+    return (__outputs.sum() / __mask.sum().clamp_min(1.0)) if reduce_opt else __outputs
 
 # COSINE #######################################################################
 
@@ -36,6 +39,7 @@ def cos_sim(
     predict_arr: torch.Tensor,
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor=None,
+    reduce_opt: bool=True,
 ) -> torch.Tensor:
     """Masked mean cosine similarity over (B, T, H) tensors."""
     # compute the point-wise cosine similarity
@@ -51,8 +55,10 @@ def cos_sim(
     __mask = __mask.reshape(mlable.shapes.filter(
         shape=tuple(__outputs.shape),
         axes=list(range(__mask.ndim)))).float()
-    # calculate the average over the masked positions only
-    return (__outputs * __mask).sum() / __mask.sum().clamp(min=1.0)
+    # filter the results for the positions outside of the mask
+    __outputs = __outputs * __mask
+    # average over the masked positions only, if requested
+    return (__outputs.sum() / __mask.sum().clamp_min(1.0)) if reduce_opt else __outputs
 
 # KL-DIV #######################################################################
 
@@ -60,6 +66,7 @@ def kl_div(
     predict_arr: torch.Tensor,
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor=None,
+    reduce_opt: bool=True,
 ) -> torch.Tensor:
     """KL divergence over (B, T, V) raw logits with (B, T) mask."""
     # compute the point-wise KL-divergence
@@ -76,5 +83,7 @@ def kl_div(
     __mask = __mask.reshape(mlable.shapes.filter(
         shape=tuple(__outputs.shape),
         axes=list(range(__mask.ndim)))).float()
-    # calculate the average over the masked positions only
-    return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)
+    # filter the results for the positions outside of the mask
+    __outputs = __outputs * __mask
+    # average over the masked positions only, if requested
+    return (__outputs.sum() / __mask.sum().clamp_min(1.0)) if reduce_opt else __outputs

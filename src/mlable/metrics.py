@@ -11,6 +11,7 @@ def topk_rate(
     predict_arr: torch.Tensor,
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor=None,
+    reduce_opt: bool=True,
     k_num: int=10,
 ) -> torch.Tensor:
     """Fraction of (B, T) positions where teacher top-k and student top-k token sequences match exactly."""
@@ -26,5 +27,7 @@ def topk_rate(
     __mask = __mask.reshape(mlable.shapes.filter(
         shape=tuple(__outputs.shape),
         axes=list(range(__mask.ndim)))).float()
-    # calculate the average over the masked positions only
-    return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)
+    # filter the results for the positions outside of the mask
+    __outputs = __outputs * __mask
+    # average over the masked positions only, if requested
+    return (__outputs.sum() / __mask.sum().clamp_min(1.0)) if reduce_opt else __outputs
