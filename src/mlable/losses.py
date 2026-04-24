@@ -13,21 +13,18 @@ def mse_loss(
     mask_arr: torch.Tensor,
 ) -> torch.Tensor:
     """MSE over (B, T, H) features with (B, T) mask."""
-    # expand the shape of the mask with singleton axes
-    __shape = mlable.shapes.filter(tuple(target_arr.shape), axes=list(range(mask_arr.ndim)))
-    # match the rank and dtype for the multiplications
-    __weights = mask_arr.reshape(__shape).float()
-    # average over the elements in the mask only: N_tot / N_mask
-    __factor = float(math.prod(tuple(__weights.shape))) / max(1.0, float(__weights.sum()))
-    # zero the elements outside of the mask
-    __preds = predict_arr.float() * __weights
-    __targs = target_arr.float() * __weights
-    # reduce to a single value
-    return __factor * torch.nn.functional.mse_loss(
-        input=__preds,
-        target=__targs,
+    # compute the element-wise MSE
+    __outputs = torch.nn.functional.mse_loss(
+        input=predict_arr.float(),
+        target=target_arr.float(),
         weight=None,
-        reduction='mean')
+        reduction='none').mean(dim=-1)
+    # match the rank and dtype for the multiplications
+    __mask = mask_arr.reshape(mlable.shapes.filter(
+        shape=tuple(__outputs.shape),
+        axes=list(range(mask_arr.ndim)))).float()
+    # calculate the average over the masked positions only
+    return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)
 
 # COSINE #######################################################################
 
@@ -37,16 +34,16 @@ def cos_sim(
     mask_arr: torch.Tensor,
 ) -> torch.Tensor:
     """Masked mean cosine similarity over (B, T, H) tensors."""
-    # match the rank and dtype for the multiplications
-    __mask = mask_arr.reshape(mlable.shapes.filter(
-        shape=tuple(target_arr.shape),
-        axes=list(range(mask_arr.ndim)))).float()
     # compute the point-wise cosine similarity
     __outputs = torch.nn.functional.cosine_similarity(
         x1=predict_arr.float(),
         x2=target_arr.float(),
         dim=-1)
-    # calculate the batch mean, over the masked positions
+    # match the rank and dtype for the multiplications
+    __mask = mask_arr.reshape(mlable.shapes.filter(
+        shape=tuple(__outputs.shape),
+        axes=list(range(mask_arr.ndim)))).float()
+    # calculate the average over the masked positions only
     return (__outputs * __mask).sum() / __mask.sum().clamp(min=1.0)
 
 # KL-DIV #######################################################################
@@ -57,15 +54,15 @@ def kl_div(
     mask_arr: torch.Tensor,
 ) -> torch.Tensor:
     """KL divergence over (B, T, V) raw logits with (B, T) mask."""
-    # match the rank and dtype for the multiplications
-    __mask = mask_arr.reshape(mlable.shapes.filter(
-        shape=tuple(target_arr.shape),
-        axes=list(range(mask_arr.ndim)))).float()
     # compute the point-wise KL-divergence
     __outputs = torch.nn.functional.kl_div(
         input=torch.nn.functional.log_softmax(predict_arr.float(), dim=-1),
         target=torch.nn.functional.log_softmax(target_arr.float(), dim=-1),
         reduction='none',
-        log_target=True)
-    # calculate the batch mean, over the masked positions only
+        log_target=True).sum(dim=-1)
+    # match the rank and dtype for the multiplications
+    __mask = mask_arr.reshape(mlable.shapes.filter(
+        shape=tuple(__outputs.shape),
+        axes=list(range(mask_arr.ndim)))).float()
+    # calculate the average over the masked positions only
     return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)

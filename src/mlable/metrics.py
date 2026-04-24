@@ -18,11 +18,9 @@ def topk_rate(
     __targs = target_arr.topk(k_num, dim=-1, sorted=True).indices
     # count the positions where all the top-k indices match
     __outputs = (__preds == __targs).all(dim=-1).float()
-    # expand the shape of the mask with singleton axes
-    __shape = mlable.shapes.filter(tuple(__outputs.shape), axes=list(range(mask_arr.ndim)))
     # match the rank and dtype for the multiplications
-    __weights = mask_arr.reshape(__shape).float()
-    # average over the elements in the mask only: N_tot / N_mask
-    __factor = float(math.prod(tuple(__weights.shape))) / max(1.0, float(__weights.sum()))
-    # discard the values outside of the mask
-    return __factor * (__outputs * __weights).mean()
+    __mask = mask_arr.reshape(mlable.shapes.filter(
+        shape=tuple(__outputs.shape),
+        axes=list(range(mask_arr.ndim)))).float()
+    # calculate the average over the masked positions only
+    return (__outputs * __mask).sum() / __mask.sum().clamp_min(1.0)
