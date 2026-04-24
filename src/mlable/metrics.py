@@ -15,10 +15,13 @@ def topk_rate(
     k_num: int=10,
 ) -> torch.Tensor:
     """Fraction of (B, T) positions where teacher top-k and student top-k token sequences match exactly."""
-    __preds = predict_arr.topk(k_num, dim=-1, sorted=True).indices
-    __targs = target_arr.topk(k_num, dim=-1, sorted=True).indices
-    # count the positions where all the top-k indices match
-    __outputs = (__preds == __targs).all(dim=-1).float()
+    __k = min(k_num, predict_arr.shape[-1])
+    __preds = predict_arr.topk(__k, dim=-1).indices
+    __targs = target_arr.topk(__k, dim=-1).indices
+    # (B, T, K) target indices that appear in the predictions
+    __outputs = (__targs.unsqueeze(-1) == __preds.unsqueeze(-2)).any(dim=-1)
+    # (B, T) fractions of the top-k that overlap
+    __outputs = __outputs.float().mean(dim=-1)
     # include all the positions by default
     __mask = (
         mask_arr if hasattr(mask_arr, 'ndim')
