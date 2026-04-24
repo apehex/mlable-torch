@@ -3,7 +3,7 @@
 ## Project
 
 - Name: `mlable`
-- Focus: PyTorch utilities for layers, model blocks, metrics, losses, schedulers, and shaping helpers.
+- Focus: PyTorch utilities for layers, model blocks, metrics, losses, schedulers, and shaping.
 - Packaging: generic project (`pyproject.toml`) targeting Python `>=3.10,<3.14`.
 
 ## Contributor Workflow
