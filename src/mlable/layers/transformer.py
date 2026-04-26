@@ -27,6 +27,7 @@ class GatedLinearUnit(torch.nn.Module):
         self._built = False
 
     def build(
+        self,
         shape: tuple,
         dtype: object=None,
         device: object=None
@@ -46,6 +47,8 @@ class GatedLinearUnit(torch.nn.Module):
             self._built = True
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        # lazy build
+        self.build(shape=tuple(inputs.shape), dtype=inputs.dtype, device=inputs.device)
         # generate both the gate and value activations at once
         __gate, __value = self._extend(inputs).chunk(chunks=2, dim=-1)
         # filter the values and project on the output dimension
@@ -137,7 +140,7 @@ class SelfAttention(torch.nn.Module):
             **kwargs)
         # zero all the features of the padding (they were not attented to)
         if hasattr(__mask, 'shape'):
-            __outputs = outputs.masked_fill(__mask.unsqueeze(-1), 0.0)
+            __outputs = __outputs.masked_fill(__mask.unsqueeze(-1), 0.0)
         # restore the axes
         return self.postprocess(__outputs, shape=__shape)
 
