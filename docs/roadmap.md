@@ -10,3 +10,4 @@ Concrete next tasks for repository maintenance.
 - [x] Make the mask optional for both the losses and metrics.
 - [x] Make the reduction (average over the masked positions) optional for the losses and metrics.
 - [ ] update the tests of the losses and metrics
+- [x] Add unit tests for transformer layers.
