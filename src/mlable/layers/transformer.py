@@ -2,11 +2,66 @@ import math
 
 import torch
 import torch.nn
+import torch.nn.functional
 
 import mlable.shapes
 import mlable.shaping.axes
 
-# SELF #########################################################################
+# SwiGLU #######################################################################
+
+class GatedLinearUnit(torch.nn.Module):
+    def __init__(
+        self,
+        hidden_dim: int,
+        output_dim: int,
+        **kwargs: dict
+    ) -> None:
+        super(GatedLinearUnit, self).__init__(**kwargs)
+        # save for import / export
+        self._config = {
+            'hidden_dim': int(hidden_dim),
+            'output_dim': int(output_dim),}
+        # build at runtime
+        self._extend = None
+        self._project = None
+        self._built = False
+
+    def build(
+        shape: tuple,
+        dtype: object=None,
+        device: object=None
+    ) -> None:
+        if not self._built:
+            # (..., E) => (..., 2*H)
+            self._extend = torch.nn.Linear(
+                in_features=int(shape[-1]),
+                out_features=2 * self._config['hidden_dim'],
+                bias=False).to(dtype=dtype, device=device)
+            # (..., H) => (..., O)
+            self._project = torch.nn.Linear(
+                in_features=self._config['hidden_dim'],
+                out_features=self._config['output_dim'],
+                bias=False).to(dtype=dtype, device=device)
+            # register
+            self._built = True
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        # generate both the gate and value activations at once
+        __gate, __value = self._extend(inputs).chunk(chunks=2, dim=-1)
+        # project on the output dimension
+        return self._project(torch.nn.functional.silu(__gate) * __value)
+
+    def output_shape(self, shape: tuple) -> tuple:
+        return tuple(shape)[:-1] + (self._config['output_dim'],)
+
+    def get_config(self) -> dict:
+        return dict(self._config)
+
+    @classmethod
+    def from_config(cls, config: dict, **kwargs: dict) -> torch.nn.Module:
+        return cls(**{**config, **kwargs})
+
+# SELF-ATTENTION ###############################################################
 
 class SelfAttention(torch.nn.Module):
     def __init__(
