@@ -1,6 +1,6 @@
 [project]
 name = "mlable-torch"
-version = "0.6.2"
+version = "0.7.0"
 description = "PyTorch libs: layers, blocks, optimizers, etc."
 authors = [{ name = "apehex", email = "17317183+apehex@users.noreply.github.com" }]
 readme = ".github/README.md"
