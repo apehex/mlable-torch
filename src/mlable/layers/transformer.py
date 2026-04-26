@@ -80,6 +80,9 @@ class SelfAttention(torch.nn.Module):
             key_padding_mask=__mask,
             need_weights=False,
             **kwargs)
+        # zero all the features of the padding (they were not attented to)
+        if hasattr(__mask, 'shape'):
+            __outputs = outputs.masked_fill(__mask.unsqueeze(-1), 0.0)
         # restore the axes
         return self.postprocess(__outputs, shape=__shape)
 
