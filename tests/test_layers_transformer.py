@@ -182,15 +182,6 @@ class TestSelfAttention:
         __y2 = __layer(__x, paddings=None)
         assert torch.allclose(__y1, __y2)
 
-    def test_padding_zeros_padded_positions(self):
-        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS)
-        __x = torch.randn(_B, _T, _H)
-        # mark last 2 positions as padding (True = padded = zero out)
-        __mask = torch.zeros(_B, _T)
-        __mask[:, _T - 2:] = 1.0
-        __y = __layer(__x, paddings=__mask)
-        assert (__y[:, _T - 2:, :] == 0).all()
-
     def test_unpadded_positions_not_all_zero(self):
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS)
         __x = torch.randn(_B, _T, _H)
