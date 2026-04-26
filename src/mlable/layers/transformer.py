@@ -48,7 +48,7 @@ class GatedLinearUnit(torch.nn.Module):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         # generate both the gate and value activations at once
         __gate, __value = self._extend(inputs).chunk(chunks=2, dim=-1)
-        # project on the output dimension
+        # filter the values and project on the output dimension
         return self._project(torch.nn.functional.silu(__gate) * __value)
 
     def output_shape(self, shape: tuple) -> tuple:
