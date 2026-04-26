@@ -14,13 +14,15 @@ class GatedLinearUnit(torch.nn.Module):
         self,
         hidden_dim: int,
         output_dim: int,
+        affine_opt: bool=True,
         **kwargs: dict
     ) -> None:
         super(GatedLinearUnit, self).__init__(**kwargs)
         # save for import / export
         self._config = {
             'hidden_dim': int(hidden_dim),
-            'output_dim': int(output_dim),}
+            'output_dim': int(output_dim),
+            'affine_opt': bool(affine_opt),}
         # build at runtime
         self._extend = None
         self._project = None
@@ -37,12 +39,12 @@ class GatedLinearUnit(torch.nn.Module):
             self._extend = torch.nn.Linear(
                 in_features=int(shape[-1]),
                 out_features=2 * self._config['hidden_dim'],
-                bias=False).to(dtype=dtype, device=device)
+                bias=self._config['affine_opt']).to(dtype=dtype, device=device)
             # (..., H) => (..., O)
             self._project = torch.nn.Linear(
                 in_features=self._config['hidden_dim'],
                 out_features=self._config['output_dim'],
-                bias=False).to(dtype=dtype, device=device)
+                bias=self._config['affine_opt']).to(dtype=dtype, device=device)
             # register
             self._built = True
 
@@ -71,7 +73,7 @@ class SelfAttention(torch.nn.Module):
         self,
         head_num: int,
         attention_idx: int=-2,
-        bias_opt: bool=True,
+        affine_opt: bool=True,
         dropout_rate: float=0.0,
         **kwargs
     ) -> None:
@@ -80,7 +82,7 @@ class SelfAttention(torch.nn.Module):
         self._config = {
             'head_num': int(head_num),
             'attention_idx': int(attention_idx) if isinstance(attention_idx, int) else -2,
-            'bias_opt': bool(bias_opt) if isinstance(bias_opt, bool) else True,
+            'affine_opt': bool(affine_opt) if isinstance(affine_opt, bool) else True,
             'dropout_rate': float(dropout_rate) if isinstance(dropout_rate, float) else 0.0,
             **kwargs}
         # build at runtime
@@ -98,7 +100,7 @@ class SelfAttention(torch.nn.Module):
             self._layer = torch.nn.MultiheadAttention(
                 embed_dim=int(shape[-1]),
                 num_heads=self._config['head_num'],
-                bias=self._config['bias_opt'],
+                bias=self._config['affine_opt'],
                 dropout=self._config['dropout_rate'],
                 kdim=None,
                 vdim=None,

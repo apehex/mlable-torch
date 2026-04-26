@@ -120,9 +120,9 @@ class TestSelfAttention:
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS)
         assert __layer._config['attention_idx'] == -2
 
-    def test_init_stores_bias_opt(self):
-        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, bias_opt=False)
-        assert __layer._config['bias_opt'] is False
+    def test_init_stores_affine_opt(self):
+        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, affine_opt=False)
+        assert __layer._config['affine_opt'] is False
 
     def test_init_stores_dropout_rate(self):
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, dropout_rate=0.1)
@@ -229,9 +229,9 @@ class TestSelfAttention:
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, attention_idx=-3)
         assert __layer.get_config()['attention_idx'] == -3
 
-    def test_get_config_contains_bias_opt(self):
-        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, bias_opt=False)
-        assert __layer.get_config()['bias_opt'] is False
+    def test_get_config_contains_affine_opt(self):
+        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, affine_opt=False)
+        assert __layer.get_config()['affine_opt'] is False
 
     def test_get_config_contains_dropout_rate(self):
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, dropout_rate=0.1)
@@ -244,12 +244,12 @@ class TestSelfAttention:
         assert __layer._config['head_num'] == _HEADS
 
     def test_from_config_roundtrip(self):
-        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, attention_idx=-3, bias_opt=False)
+        __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS, attention_idx=-3, affine_opt=False)
         __cfg = __layer.get_config()
         __layer2 = mlable.layers.transformer.SelfAttention.from_config(__cfg)
         assert __layer2._config['head_num'] == _HEADS
         assert __layer2._config['attention_idx'] == -3
-        assert __layer2._config['bias_opt'] is False
+        assert __layer2._config['affine_opt'] is False
 
     def test_from_config_produces_working_layer(self):
         __layer = mlable.layers.transformer.SelfAttention(head_num=_HEADS)
