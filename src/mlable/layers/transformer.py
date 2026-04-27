@@ -32,19 +32,23 @@ class GatedLinearUnit(torch.nn.Module):
         self,
         shape: tuple,
         dtype: object=None,
-        device: object=None
+        device: object=None,
     ) -> None:
         if not self._built:
             # (..., E) => (..., 2*H)
             self._extend = torch.nn.Linear(
                 in_features=int(shape[-1]),
                 out_features=2 * self._config['hidden_dim'],
-                bias=self._config['affine_opt']).to(dtype=dtype, device=device)
+                bias=self._config['affine_opt'],
+                dtype=dtype,
+                device=device)
             # (..., H) => (..., O)
             self._project = torch.nn.Linear(
                 in_features=self._config['hidden_dim'],
                 out_features=self._config['output_dim'],
-                bias=self._config['affine_opt']).to(dtype=dtype, device=device)
+                bias=self._config['affine_opt'],
+                dtype=dtype,
+                device=device)
             # register
             self._built = True
 
@@ -93,7 +97,7 @@ class SelfAttention(torch.nn.Module):
         self,
         shape: tuple,
         device: object=None,
-        dtype: object=None
+        dtype: object=None,
     ) -> None:
         if (not self._built) or (self._layer is None):
             # init the layer / weights
@@ -106,7 +110,9 @@ class SelfAttention(torch.nn.Module):
                 vdim=None,
                 batch_first=True,
                 add_bias_kv=False,
-                add_zero_attn=False).to(dtype=dtype, device=device)
+                add_zero_attn=False,
+                dtype=dtype,
+                device=device)
             # register
             self._built = True
 

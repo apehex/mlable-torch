@@ -39,8 +39,8 @@ class PositionalEmbedding(torch.nn.Module):
             __dim_o = shape[max(__axis_i, __axis_o)]
             # built the kernel
             self._kernel = torch.nn.Parameter(
-                torch.randn((__dim_i, __dim_o)),
-                requires_grad=True).to(device=device, dtype=dtype)
+                torch.randn((__dim_i, __dim_o), dtype=dtype, device=device),
+                requires_grad=True)
             # register
             self._built = True
 
@@ -92,12 +92,12 @@ class CompositeEmbedding(torch.nn.Embedding):
             'input_dim': int(input_dim),
             'output_dim': int(output_dim),
             'group_dim': -1 if group_dim is None else int(group_dim),
-            'merge_axes': bool(merge_axes),
-            **kwargs}
+            'merge_axes': bool(merge_axes),}
         # register
         self._built = True
 
     def build(self, shape: tuple=(), device: object=None, dtype: object=None) -> None:
+        self.to(dtype=dtype, device=device)
         self._built = True
 
     def forward(
