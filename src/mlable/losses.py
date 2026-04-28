@@ -12,6 +12,8 @@ def mse_loss(
     target_arr: torch.Tensor,
     mask_arr: torch.Tensor=None,
     reduce_opt: bool=True,
+    relative_opt: bool=False,
+    epsilon_rate: float=1e-8,
 ) -> torch.Tensor:
     """MSE over (B, T, H) features with (B, T) mask."""
     # compute the element-wise MSE
@@ -20,6 +22,10 @@ def mse_loss(
         target=target_arr.float(),
         weight=None,
         reduction='none').mean(dim=-1)
+    # scale the loss according to the target
+    if relative_opt:
+        __scale = (target_arr.float() ** 2).mean(dim=-1).clamp(min=epsilon_rate)
+        __outputs = __outputs / __scale
     # include all the positions by default
     __mask = (
         mask_arr if hasattr(mask_arr, 'ndim')
